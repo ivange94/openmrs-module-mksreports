@@ -9,20 +9,25 @@ import java.util.Map;
 
 import org.openmrs.Concept;
 import org.openmrs.Location;
+import org.openmrs.api.context.Context;
 import org.openmrs.module.initializer.api.InitializerService;
 import org.openmrs.module.mksreports.MKSReportManager;
 import org.openmrs.module.mksreports.MKSReportsConstants;
-import org.openmrs.module.mksreports.definition.ObsSummaryRowCohortDefinition;
 import org.openmrs.module.reporting.cohort.definition.AgeCohortDefinition;
 import org.openmrs.module.reporting.cohort.definition.CodedObsCohortDefinition;
 import org.openmrs.module.reporting.cohort.definition.CompositionCohortDefinition;
 import org.openmrs.module.reporting.cohort.definition.GenderCohortDefinition;
+import org.openmrs.module.reporting.cohort.definition.evaluator.CodedObsCohortDefinitionEvaluator;
+import org.openmrs.module.reporting.common.DateUtil;
 import org.openmrs.module.reporting.common.DurationUnit;
 import org.openmrs.module.reporting.common.MessageUtil;
 import org.openmrs.module.reporting.common.SetComparator;
 import org.openmrs.module.reporting.dataset.definition.CohortCrossTabDataSetDefinition;
+import org.openmrs.module.reporting.evaluation.EvaluationContext;
 import org.openmrs.module.reporting.evaluation.parameter.Mapped;
 import org.openmrs.module.reporting.evaluation.parameter.Parameter;
+import org.openmrs.module.reporting.evaluation.querybuilder.SqlQueryBuilder;
+import org.openmrs.module.reporting.evaluation.service.EvaluationService;
 import org.openmrs.module.reporting.report.ReportDesign;
 import org.openmrs.module.reporting.report.definition.ReportDefinition;
 import org.openmrs.module.reporting.report.manager.ReportManagerUtil;
@@ -161,17 +166,9 @@ public class OutpatientConsultationReportManager extends MKSReportManager {
 			opdConsult.addRow(member.getDisplayString(), diag, parameterMappings);
 		}
 		
-		ObsSummaryRowCohortDefinition diag = new ObsSummaryRowCohortDefinition();
-		diag.addParameter(new Parameter("onOrAfter", "On Or After", Date.class));
-		diag.addParameter(new Parameter("onOrBefore", "On Or Before", Date.class));
-		diag.addParameter(new Parameter("locationList", "Visit Location", Location.class, List.class, null));
-		diag.setOperator(SetComparator.IN);
-		diag.setQuestion(inizService.getConceptFromKey("report.opdconsult.diagnosisQuestion.concept"));
-		diag.setValueList(allDiags.getSetMembers());
-		opdConsult.addRow("VTotals", diag, parameterMappings);
-		
 		setColumnNames();
 		
+		CodedObsCohortDefinitionEvaluator test;
 		GenderCohortDefinition males = new GenderCohortDefinition();
 		males.setMaleIncluded(true);
 		
@@ -320,7 +317,20 @@ public class OutpatientConsultationReportManager extends MKSReportManager {
 	
 	@Override
 	public List<ReportDesign> constructReportDesigns(ReportDefinition reportDefinition) {
-		return Arrays
-		        .asList(ReportManagerUtil.createCsvReportDesign("42b32ac1-fcd0-473d-8fdb-71fd6fc2e26d", reportDefinition));
+		return Arrays.asList(ReportManagerUtil.createCsvReportDesign("42b32ac1-fcd0-473d-8fdb-71fd6fc2e26d",
+		    reportDefinition));
+	}
+	
+	public void test() {
+		EvaluationService evaluationService = Context.getService(EvaluationService.class);
+		String QUERY = "select o.person_id from obs o  inner join patient p on o.person_id = p.patient_id "
+		        + " where o.voided = false and p.voided = false";
+		EvaluationContext context = new EvaluationContext();
+		context.addParameterValue("startDate", DateUtil.parseDate("2008-08-01", "yyyy-MM-dd"));
+		context.addParameterValue("endDate", DateUtil.parseDate("2009-09-30", "yyyy-MM-dd"));
+		SqlQueryBuilder queryBuilder = new SqlQueryBuilder();
+		queryBuilder.append(QUERY);
+		queryBuilder.setParameters(context.getParameterValues());
+		List<Object[]> result = evaluationService.evaluateToList(queryBuilder, context);
 	}
 }

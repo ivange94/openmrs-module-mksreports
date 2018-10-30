@@ -26,8 +26,7 @@ import java.util.List;
 public class ObsSummaryRowCohortDefinitionEvaluator extends BaseObsCohortDefinitionEvaluator {
 	
 	@Override
-	public EvaluatedCohort evaluate(CohortDefinition cohortDefinition, EvaluationContext context)
-	        throws EvaluationException {
+	public EvaluatedCohort evaluate(CohortDefinition cohortDefinition, EvaluationContext context) throws EvaluationException {
 		ObsSummaryRowCohortDefinition cd = (ObsSummaryRowCohortDefinition) cohortDefinition;
 		long obsCount = getObsCount(cd, cd.getOperator(), cd.getValueList(), context);
 		Cohort c = getPatientsHavingObs(cd, null, null, null, null, cd.getOperator(), cd.getValueList(), context);
@@ -85,8 +84,8 @@ public class ObsSummaryRowCohortDefinitionEvaluator extends BaseObsCohortDefinit
 							valueListForQuery.add(((Concept) o).getConceptId());
 						} else {
 							if (!(o instanceof Number)) {
-								throw new IllegalArgumentException(
-								        "Don't know how to handle " + o.getClass() + " in valueList");
+								throw new IllegalArgumentException("Don't know how to handle " + o.getClass()
+								        + " in valueList");
 							}
 							
 							valueListForQuery.add(((Number) o).intValue());
